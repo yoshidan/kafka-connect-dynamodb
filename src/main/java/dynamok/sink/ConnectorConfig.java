@@ -43,6 +43,7 @@ class ConnectorConfig extends AbstractConfig {
         static final String TOP_VALUE_ATTRIBUTE = "top.value.attribute";
         static final String MAX_RETRIES = "max.retries";
         static final String RETRY_BACKOFF_MS = "retry.backoff.ms";
+        static final String PRIMARY_KEY_ATTRIBUTE = "primary.key.attribute";
     }
 
     static final ConfigDef CONFIG_DEF = new ConfigDef()
@@ -80,7 +81,10 @@ class ConnectorConfig extends AbstractConfig {
             .define(Keys.MAX_RETRIES, ConfigDef.Type.INT, 10,
                     ConfigDef.Importance.MEDIUM, "The maximum number of times to retry on errors before failing the task.")
             .define(Keys.RETRY_BACKOFF_MS, ConfigDef.Type.INT, 3000,
-                    ConfigDef.Importance.MEDIUM, "The time in milliseconds to wait following an error before a retry attempt is made.");
+                    ConfigDef.Importance.MEDIUM, "The time in milliseconds to wait following an error before a retry attempt is made.")
+            .define(Keys.PRIMARY_KEY_ATTRIBUTE, ConfigDef.Type.STRING, "",
+                    ConfigDef.Importance.HIGH, "Dynamo DB table primary key");
+
 
     final Regions region;
     final Password accessKeyId;
@@ -94,6 +98,7 @@ class ConnectorConfig extends AbstractConfig {
     final String topValueAttribute;
     final int maxRetries;
     final int retryBackoffMs;
+    final String primaryKeyAttribute;
 
     ConnectorConfig(ConfigDef config, Map<String, String> parsedConfig) {
         super(config, parsedConfig);
@@ -109,6 +114,7 @@ class ConnectorConfig extends AbstractConfig {
         topValueAttribute = getString(Keys.TOP_VALUE_ATTRIBUTE);
         maxRetries = getInt(Keys.MAX_RETRIES);
         retryBackoffMs = getInt(Keys.RETRY_BACKOFF_MS);
+        primaryKeyAttribute = getString(Keys.PRIMARY_KEY_ATTRIBUTE);
     }
 
     ConnectorConfig(Map<String, String> props) {

@@ -27,6 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.LimitExceededException;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughputExceededException;
 import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
+import com.amazonaws.util.StringUtils;
 import dynamok.Version;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -39,12 +40,7 @@ import org.apache.kafka.connect.sink.SinkTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class DynamoDbSinkTask extends SinkTask {
@@ -127,12 +123,19 @@ public class DynamoDbSinkTask extends SinkTask {
     }
 
     private Map<String, List<WriteRequest>> toWritesByTable(Iterator<SinkRecord> recordIterator) {
-        final Map<String, List<WriteRequest>> writesByTable = new HashMap<>();
+        Map<String, Map<Object, WriteRequest>> partitionByPk = new HashMap<>();
         for (int count = 0; recordIterator.hasNext() && count < config.batchSize; count++) {
             final SinkRecord record = recordIterator.next();
-            final WriteRequest writeRequest = new WriteRequest(toPutRequest(record));
-            writesByTable.computeIfAbsent(tableName(record), k -> new ArrayList<>(config.batchSize)).add(writeRequest);
+            final PutRequest putRequest = toPutRequest(record);
+            final Object primaryKey = putRequest.getItem().get(config.primaryKeyAttribute);
+            final WriteRequest writeRequest = new WriteRequest(putRequest);
+            partitionByPk.computeIfAbsent(tableName(record), k -> new HashMap<>()).put(primaryKey, writeRequest);
         }
+        final Map<String, List<WriteRequest>> writesByTable = new HashMap<>();
+        partitionByPk.keySet().forEach(table -> {
+            final List<WriteRequest> writes = new ArrayList<>(partitionByPk.get(table).values());
+            writesByTable.put(table, writes);
+        });
         return writesByTable;
     }
 
