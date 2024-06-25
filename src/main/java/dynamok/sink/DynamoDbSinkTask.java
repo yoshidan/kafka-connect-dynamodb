@@ -122,7 +122,7 @@ public class DynamoDbSinkTask extends SinkTask {
         remainingRetries = config.maxRetries;
     }
 
-    private Map<String, List<WriteRequest>> toWritesByTable(Iterator<SinkRecord> recordIterator) {
+    public Map<String, List<WriteRequest>> toWritesByTable(Iterator<SinkRecord> recordIterator) {
         Map<String, Map<Object, WriteRequest>> partitionByPk = new HashMap<>();
         for (int count = 0; recordIterator.hasNext() && count < config.batchSize; count++) {
             final SinkRecord record = recordIterator.next();
